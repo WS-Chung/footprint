@@ -59,21 +59,21 @@ def build_map(footprints, center_lat=37.34541, center_lng=127.08995):
         is_ws = (fp["user_name"] == "운석")
         stars = "⭐" * int(fp.get("rating") or 0)
         
-        # ⭐️ 팝업창 디자인 수정: 등록자, 날짜, 별점을 한 줄(inline)로 합치고 구분선(|)을 넣었습니다.
+        # ⭐️ 모바일 최적화: 글자 크기를 1pt씩 줄이고, 패딩 및 최소 너비(min-width)를 컴팩트하게 수정했습니다.
         popup_html = (
-            f"<div style='font-family:sans-serif; min-width:280px; padding:8px;'>"
-            f"<div style='margin-top:0px; margin-bottom:8px; color:#333; font-size:16pt; font-weight:bold;'> {fp['place_name']}</div>"
+            f"<div style='font-family:sans-serif; min-width:250px; padding:6px;'>"
+            f"<div style='margin-top:0px; margin-bottom:8px; color:#333; font-size:15pt; font-weight:bold;'> {fp['place_name']}</div>"
             
             # 여기서부터 3가지 정보가 가로 한 줄로 배치됩니다.
-            f"<div style='margin-bottom:12px; font-size:12pt; white-space:nowrap;'>"
+            f"<div style='margin-bottom:12px; font-size:11pt; white-space:nowrap;'>"
             f"{'🩵' if is_ws else '🩷'} <b>{fp['user_name']}</b>"
             f"<span style='color:#ccc; margin:0 8px;'>|</span>"
-            f"<span style='font-size:11pt; color:#666;'>📅 {fp.get('visit_date','-')}</span>"
+            f"<span style='font-size:10pt; color:#666;'>📅 {fp.get('visit_date','-')}</span>"
             f"<span style='color:#ccc; margin:0 8px;'>|</span>"
-            f"<span style='font-size:13pt;'>{stars}</span>"
+            f"<span style='font-size:12pt;'>{stars}</span>"
             f"</div>"
             
-            f"<div style='background-color:#f8f9fa; padding:12px; border-radius:8px; font-size:11pt; line-height:1.4; border-left:4px solid {'#3B82F6' if is_ws else '#EF4444'}; white-space:normal;'>"
+            f"<div style='background-color:#f8f9fa; padding:10px; border-radius:8px; font-size:10pt; line-height:1.4; border-left:4px solid {'#3B82F6' if is_ws else '#EF4444'}; white-space:normal;'>"
             f" {fp.get('review') or '-'}</div>"
             f"</div>"
         )
@@ -86,8 +86,8 @@ def build_map(footprints, center_lat=37.34541, center_lng=127.08995):
 
         folium.Marker(
             location=[fp["lat"], fp["lng"]],
-            # ⭐️ 한 줄로 길어질 것을 대비해 max_width를 400으로 넉넉하게 잡았습니다.
-            popup=folium.Popup(popup_html, max_width=400),
+            # ⭐️ 팝업 최대 너비(max_width)도 모바일 화면을 고려하여 350으로 줄였습니다.
+            popup=folium.Popup(popup_html, max_width=350),
             tooltip=fp["place_name"],
             icon=icon_obj
         ).add_to(m)
