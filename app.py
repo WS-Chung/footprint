@@ -92,7 +92,6 @@ with left_col:
     st.divider()
 
     st.markdown("**나는 누구?**")
-    # ⭐️ 핵심 수정 부분: 최신 버전에 맞게 라디오 버튼에 key="selected_user"를 직접 달아주었습니다.
     st.radio("유저 선택", ["운석", "혜민"], horizontal=True, label_visibility="collapsed", key="selected_user")
     
     st.markdown("🔵 **운석** 으로 활동 중" if st.session_state.selected_user == "운석" else "🔴 **혜민** 으로 활동 중")
@@ -121,11 +120,10 @@ with left_col:
         visit_date    = st.date_input("방문 일자 *")
         review_text   = st.text_area("한 줄 리뷰 (30자 이내)", placeholder="예: 분위기가 너무 좋았어!", max_chars=30)
         
-        # ⭐️ 슬라이더 대신 세련된 클릭형 별점 위젯(안전을 위해 key 추가)을 사용합니다!
         st.markdown("**⭐ 별점 선택 * **")
         rating_index  = st.feedback("stars", key="feedback_rating")
-        
-        uploaded_file = st.file_uploader("사진 등록", type=["jpg","jpeg","png"])
+
+        # 사진 등록 UI와 로직이 완전히 제거되었습니다.
 
         if st.button("💾 발자국 저장", use_container_width=True, type="primary"):
             if not place_name:
@@ -134,23 +132,9 @@ with left_col:
                 st.warning("앗! 별점을 클릭해서 선택해 주세요 ⭐")
             else:
                 final_rating = int(rating_index + 1)
-                image_url = None
                 
-                if uploaded_file:
-                    file_bytes = uploaded_file.read()
-                    file_name  = f"{st.session_state.selected_user}_{int(time.time())}_{uploaded_file.name}"
-                    try:
-                        supabase.storage.from_("footprint_images").upload(
-                            path=file_name,
-                            file=file_bytes,
-                            file_options={"content-type": uploaded_file.type}
-                        )
-                        raw_url = supabase.storage.from_("footprint_images").get_public_url(file_name)
-                        image_url = raw_url if isinstance(raw_url, str) else raw_url.get("publicURL") or raw_url.get("publicUrl", "")
-                    except Exception as e:
-                        st.warning(f"이미지 업로드 실패: {e}")
-
                 try:
+                    # DB 저장 시 image_url 항목을 덜어냈습니다.
                     supabase.table("footprints").insert({
                         "user_name" : st.session_state.selected_user,
                         "lat"       : st.session_state.clicked_lat,
@@ -158,8 +142,7 @@ with left_col:
                         "place_name": place_name,
                         "visit_date": str(visit_date),
                         "review"    : review_text,
-                        "rating"    : final_rating,
-                        "image_url" : image_url,
+                        "rating"    : final_rating
                     }).execute()
                     st.success("✅ 발자국이 저장되었습니다!")
                     load_footprints.clear()
@@ -241,9 +224,7 @@ with right_col:
         st.markdown(f"⭐ **별점:** {'⭐' * int(marker.get('rating') or 0)}")
         st.markdown(f"💬 **리뷰:** {marker.get('review') or '-'}")
 
-        img = marker.get("image_url")
-        if img and str(img).strip():
-            st.image(str(img).strip(), use_container_width=True)
+        # 우측 패널의 이미지 표시 영역이 제거되었습니다.
 
         st.divider()
         if st.button("✖ 닫기", use_container_width=True):
