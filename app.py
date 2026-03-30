@@ -37,7 +37,6 @@ for key, val in {
     "is_adding"      : False,
     "clicked_lat"    : None,
     "clicked_lng"    : None,
-    "selected_marker": None,
 }.items():
     if key not in st.session_state:
         st.session_state[key] = val
@@ -59,12 +58,17 @@ def build_map(footprints, center_lat=37.34541, center_lng=127.08995):
     for fp in footprints:
         is_ws = (fp["user_name"] == "운석")
         stars = "⭐" * int(fp.get("rating") or 0)
+        
+        # ⭐️ 팝업창 디자인 수정: 모든 텍스트 크기를 명시적으로 약 2~3pt 이상 키우고 팝업 최소 너비를 260px로 확장했습니다.
         popup_html = (
-            f"<div style='font-family:sans-serif;min-width:160px;'>"
-            f"<b>📍 {fp['place_name']}</b><br>"
-            f"{'🔵' if is_ws else '🔴'} {fp['user_name']}<br>"
-            f"📅 {fp.get('visit_date','-')}<br>{stars}<br>"
+            f"<div style='font-family:sans-serif; min-width:260px; padding:8px;'>"
+            f"<div style='margin-top:0px; margin-bottom:8px; color:#333; font-size:16pt; font-weight:bold;'>📍 {fp['place_name']}</div>"
+            f"<div style='margin-bottom:6px; font-size:12pt;'>{'🔵' if is_ws else '🔴'} <b>{fp['user_name']}</b></div>"
+            f"<div style='margin-bottom:6px; font-size:11pt; color:#666;'>📅 {fp.get('visit_date','-')}</div>"
+            f"<div style='margin-bottom:10px; font-size:14pt;'>{stars}</div>"
+            f"<div style='background-color:#f8f9fa; padding:12px; border-radius:8px; font-size:11pt; line-height:1.4; border-left:4px solid {'#3B82F6' if is_ws else '#EF4444'};'>"
             f"💬 {fp.get('review') or '-'}</div>"
+            f"</div>"
         )
         
         icon_data = ws_icon_data if is_ws else hm_icon_data
@@ -75,7 +79,8 @@ def build_map(footprints, center_lat=37.34541, center_lng=127.08995):
 
         folium.Marker(
             location=[fp["lat"], fp["lng"]],
-            popup=folium.Popup(popup_html, max_width=220),
+            # ⭐️ 팝업의 최대 너비(max_width)도 글자 크기에 맞춰 300에서 360으로 넉넉하게 확장했습니다.
+            popup=folium.Popup(popup_html, max_width=360),
             tooltip=fp["place_name"],
             icon=icon_obj
         ).add_to(m)
@@ -83,9 +88,9 @@ def build_map(footprints, center_lat=37.34541, center_lng=127.08995):
     return m
 
 # ════════════════════════════════════════════════════════════
-# 좌측 패널
+# 화면 분할 (좌측: 메뉴 / 우측: 확장된 지도)
 # ════════════════════════════════════════════════════════════
-left_col, center_col, right_col = st.columns([1, 2.5, 1.5])
+left_col, right_col = st.columns([1, 3])  
 
 with left_col:
     st.markdown("## 👣 우리 발자국")
@@ -123,8 +128,6 @@ with left_col:
         st.markdown("**⭐ 별점 선택 * **")
         rating_index  = st.feedback("stars", key="feedback_rating")
 
-        # 사진 등록 UI와 로직이 완전히 제거되었습니다.
-
         if st.button("💾 발자국 저장", use_container_width=True, type="primary"):
             if not place_name:
                 st.error("장소 이름을 입력해 주세요!")
@@ -134,7 +137,6 @@ with left_col:
                 final_rating = int(rating_index + 1)
                 
                 try:
-                    # DB 저장 시 image_url 항목을 덜어냈습니다.
                     supabase.table("footprints").insert({
                         "user_name" : st.session_state.selected_user,
                         "lat"       : st.session_state.clicked_lat,
@@ -154,21 +156,21 @@ with left_col:
                     st.error(f"저장 실패: {e}")
 
 # ════════════════════════════════════════════════════════════
-# 중앙 패널
+# 우측 패널 (풀사이즈 지도)
 # ════════════════════════════════════════════════════════════
-with center_col:
+with right_col:
     footprints_data = load_footprints()
     
-    c_lat = st.session_state.selected_marker["lat"] if st.session_state.selected_marker else 37.34541
-    c_lng = st.session_state.selected_marker["lng"] if st.session_state.selected_marker else 127.08995
+    c_lat = st.session_state.clicked_lat if st.session_state.clicked_lat else 37.34541
+    c_lng = st.session_state.clicked_lng if st.session_state.clicked_lng else 127.08995
 
-    fmap     = build_map(footprints_data, c_lat, c_lng)
+    fmap = build_map(footprints_data, c_lat, c_lng)
     
     map_data = st_folium(
         fmap, 
-        height=560, 
+        height=700, 
         use_container_width=True,
-        returned_objects=["last_clicked", "last_object_clicked_popup"]
+        returned_objects=["last_clicked"] 
     )
 
     if map_data and map_data.get("last_clicked") and st.session_state.is_adding:
@@ -177,56 +179,4 @@ with center_col:
         if st.session_state.clicked_lat != new_lat or st.session_state.clicked_lng != new_lng:
             st.session_state.clicked_lat = new_lat
             st.session_state.clicked_lng = new_lng
-            st.rerun()
-
-    if map_data and map_data.get("last_object_clicked_popup"):
-        popup_text = str(map_data["last_object_clicked_popup"])
-        for fp in footprints_data:
-            if fp["place_name"] in popup_text:
-                if st.session_state.selected_marker != fp:
-                    st.session_state.selected_marker = fp
-                    st.session_state.is_adding = False
-                    st.rerun()
-                break
-
-# ════════════════════════════════════════════════════════════
-# 우측 패널
-# ════════════════════════════════════════════════════════════
-with right_col:
-    st.markdown("## 📌 발자국 상세")
-    st.divider()
-
-    if st.session_state.selected_marker is None:
-        st.markdown("""
-        <div style='text-align:center;color:#aaa;padding:60px 10px;'>
-            <div style='font-size:2.5rem'>👆</div>
-            <div style='margin-top:10px;'>지도에서 마커를 클릭하면<br>상세 정보가 여기에 표시됩니다.</div>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        marker     = st.session_state.selected_marker
-        user_color = "#3B82F6" if marker.get("user_name") == "운석" else "#EF4444"
-        user_emoji = "🔵" if marker.get("user_name") == "운석" else "🔴"
-
-        st.markdown(f"""
-        <div style='background:{user_color}18;border-left:4px solid {user_color};
-             border-radius:8px;padding:12px 16px;margin-bottom:12px;'>
-            <div style='font-size:0.85rem;color:{user_color};font-weight:bold;'>
-                {user_emoji} {marker.get("user_name")}의 발자국
-            </div>
-            <div style='font-size:1.3rem;font-weight:bold;margin-top:4px;'>
-                📍 {marker.get("place_name","")}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown(f"📅 **방문일:** {marker.get('visit_date', '-')}")
-        st.markdown(f"⭐ **별점:** {'⭐' * int(marker.get('rating') or 0)}")
-        st.markdown(f"💬 **리뷰:** {marker.get('review') or '-'}")
-
-        # 우측 패널의 이미지 표시 영역이 제거되었습니다.
-
-        st.divider()
-        if st.button("✖ 닫기", use_container_width=True):
-            st.session_state.selected_marker = None
             st.rerun()
