@@ -92,9 +92,10 @@ with left_col:
     st.divider()
 
     st.markdown("**나는 누구?**")
-    user = st.radio("유저 선택", ["운석", "혜민"], horizontal=True, label_visibility="collapsed")
-    st.session_state.selected_user = user
-    st.markdown("🔵 **운석** 으로 활동 중" if user == "운석" else "🔴 **혜민** 으로 활동 중")
+    # ⭐️ 핵심 수정 부분: 최신 버전에 맞게 라디오 버튼에 key="selected_user"를 직접 달아주었습니다.
+    st.radio("유저 선택", ["운석", "혜민"], horizontal=True, label_visibility="collapsed", key="selected_user")
+    
+    st.markdown("🔵 **운석** 으로 활동 중" if st.session_state.selected_user == "운석" else "🔴 **혜민** 으로 활동 중")
     st.divider()
 
     if not st.session_state.is_adding:
@@ -120,9 +121,9 @@ with left_col:
         visit_date    = st.date_input("방문 일자 *")
         review_text   = st.text_area("한 줄 리뷰 (30자 이내)", placeholder="예: 분위기가 너무 좋았어!", max_chars=30)
         
-        # ⭐️ 슬라이더를 지우고, 세련된 클릭형 별점 위젯을 도입했습니다!
+        # ⭐️ 슬라이더 대신 세련된 클릭형 별점 위젯(안전을 위해 key 추가)을 사용합니다!
         st.markdown("**⭐ 별점 선택 * **")
-        rating_index  = st.feedback("stars")
+        rating_index  = st.feedback("stars", key="feedback_rating")
         
         uploaded_file = st.file_uploader("사진 등록", type=["jpg","jpeg","png"])
 
@@ -130,10 +131,8 @@ with left_col:
             if not place_name:
                 st.error("장소 이름을 입력해 주세요!")
             elif rating_index is None:
-                # 별점을 클릭하지 않으면 저장되지 않도록 방어 로직을 추가했습니다.
                 st.warning("앗! 별점을 클릭해서 선택해 주세요 ⭐")
             else:
-                # 0부터 시작하므로 +1을 해줍니다 (0=1점, 4=5점)
                 final_rating = int(rating_index + 1)
                 image_url = None
                 
