@@ -180,7 +180,14 @@ with center_col:
     c_lng = st.session_state.selected_marker["lng"] if st.session_state.selected_marker else 127.08995
 
     fmap     = build_map(footprints_data, st.session_state.is_adding, c_lat, c_lng)
-    map_data = st_folium(fmap, height=560, use_container_width=True)
+    
+    # ⭐️ 핵심 수정 부분: 줌/팬할 때 화면 새로고침을 방지하도록 returned_objects를 지정했습니다!
+    map_data = st_folium(
+        fmap, 
+        height=560, 
+        use_container_width=True,
+        returned_objects=["last_clicked", "last_object_clicked_popup"]
+    )
 
     if map_data and map_data.get("last_clicked") and st.session_state.is_adding:
         new_lat = map_data["last_clicked"]["lat"]
