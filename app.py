@@ -43,7 +43,8 @@ def get_image_base64(filepath):
             return f"data:image/png;base64,{encoded}"
     return None
 
-def build_map(footprints, is_adding, center_lat=37.5665, center_lng=126.9780):
+# 중심 좌표의 기본값을 37.34541, 127.08995로 변경했습니다.
+def build_map(footprints, is_adding, center_lat=37.34541, center_lng=127.08995):
     m = folium.Map(location=[center_lat, center_lng], zoom_start=12, tiles="OpenStreetMap")
 
     # 미리 두 분의 아이콘 파일을 읽어둡니다. (파일이 없으면 None 반환)
@@ -64,7 +65,7 @@ def build_map(footprints, is_adding, center_lat=37.5665, center_lng=126.9780):
         # 아이콘 적용: 파일이 있으면 사진을 (38x38 사이즈로), 없으면 기본 핀(파랑/빨강)을 띄웁니다.
         icon_data = ws_icon_data if is_ws else hm_icon_data
         if icon_data:
-            icon_obj = folium.CustomIcon(icon_image=icon_data, icon_size=(48, 48))
+            icon_obj = folium.CustomIcon(icon_image=icon_data, icon_size=(38, 38))
         else:
             icon_obj = folium.Icon(color="blue" if is_ws else "red", icon="map-marker", prefix="fa")
 
@@ -173,8 +174,10 @@ with left_col:
 # ════════════════════════════════════════════════════════════
 with center_col:
     footprints_data = load_footprints()
-    c_lat = st.session_state.selected_marker["lat"] if st.session_state.selected_marker else 37.5665
-    c_lng = st.session_state.selected_marker["lng"] if st.session_state.selected_marker else 126.9780
+    
+    # 선택된 마커가 없을 때 맵의 초기 위치도 요청하신 좌표로 변경했습니다.
+    c_lat = st.session_state.selected_marker["lat"] if st.session_state.selected_marker else 37.34541
+    c_lng = st.session_state.selected_marker["lng"] if st.session_state.selected_marker else 127.08995
 
     fmap     = build_map(footprints_data, st.session_state.is_adding, c_lat, c_lng)
     map_data = st_folium(fmap, height=560, use_container_width=True)
