@@ -59,15 +59,22 @@ def build_map(footprints, center_lat=37.34541, center_lng=127.08995):
         is_ws = (fp["user_name"] == "운석")
         stars = "⭐" * int(fp.get("rating") or 0)
         
-        # ⭐️ 팝업창 디자인 수정: 모든 텍스트 크기를 명시적으로 약 2~3pt 이상 키우고 팝업 최소 너비를 260px로 확장했습니다.
+        # ⭐️ 팝업창 디자인 수정: 등록자, 날짜, 별점을 한 줄(inline)로 합치고 구분선(|)을 넣었습니다.
         popup_html = (
-            f"<div style='font-family:sans-serif; min-width:260px; padding:8px;'>"
-            f"<div style='margin-top:0px; margin-bottom:8px; color:#333; font-size:16pt; font-weight:bold;'>📍 {fp['place_name']}</div>"
-            f"<div style='margin-bottom:6px; font-size:12pt;'>{'🔵' if is_ws else '🔴'} <b>{fp['user_name']}</b></div>"
-            f"<div style='margin-bottom:6px; font-size:11pt; color:#666;'>📅 {fp.get('visit_date','-')}</div>"
-            f"<div style='margin-bottom:10px; font-size:14pt;'>{stars}</div>"
-            f"<div style='background-color:#f8f9fa; padding:12px; border-radius:8px; font-size:11pt; line-height:1.4; border-left:4px solid {'#3B82F6' if is_ws else '#EF4444'};'>"
-            f"💬 {fp.get('review') or '-'}</div>"
+            f"<div style='font-family:sans-serif; min-width:280px; padding:8px;'>"
+            f"<div style='margin-top:0px; margin-bottom:8px; color:#333; font-size:16pt; font-weight:bold;'> {fp['place_name']}</div>"
+            
+            # 여기서부터 3가지 정보가 가로 한 줄로 배치됩니다.
+            f"<div style='margin-bottom:12px; font-size:12pt; white-space:nowrap;'>"
+            f"{'🩵' if is_ws else '🩷'} <b>{fp['user_name']}</b>"
+            f"<span style='color:#ccc; margin:0 8px;'>|</span>"
+            f"<span style='font-size:11pt; color:#666;'>📅 {fp.get('visit_date','-')}</span>"
+            f"<span style='color:#ccc; margin:0 8px;'>|</span>"
+            f"<span style='font-size:13pt;'>{stars}</span>"
+            f"</div>"
+            
+            f"<div style='background-color:#f8f9fa; padding:12px; border-radius:8px; font-size:11pt; line-height:1.4; border-left:4px solid {'#3B82F6' if is_ws else '#EF4444'}; white-space:normal;'>"
+            f" {fp.get('review') or '-'}</div>"
             f"</div>"
         )
         
@@ -79,8 +86,8 @@ def build_map(footprints, center_lat=37.34541, center_lng=127.08995):
 
         folium.Marker(
             location=[fp["lat"], fp["lng"]],
-            # ⭐️ 팝업의 최대 너비(max_width)도 글자 크기에 맞춰 300에서 360으로 넉넉하게 확장했습니다.
-            popup=folium.Popup(popup_html, max_width=360),
+            # ⭐️ 한 줄로 길어질 것을 대비해 max_width를 400으로 넉넉하게 잡았습니다.
+            popup=folium.Popup(popup_html, max_width=400),
             tooltip=fp["place_name"],
             icon=icon_obj
         ).add_to(m)
@@ -99,7 +106,7 @@ with left_col:
     st.markdown("**나는 누구?**")
     st.radio("유저 선택", ["운석", "혜민"], horizontal=True, label_visibility="collapsed", key="selected_user")
     
-    st.markdown("🔵 **운석** 으로 활동 중" if st.session_state.selected_user == "운석" else "🔴 **혜민** 으로 활동 중")
+    st.markdown("🩵 **운석** 으로 활동 중" if st.session_state.selected_user == "운석" else "🩷 **혜민** 으로 활동 중")
     st.divider()
 
     if not st.session_state.is_adding:
@@ -121,9 +128,9 @@ with left_col:
         st.success(f"✅ 위치 선택 완료!\n\n`{st.session_state.clicked_lat:.5f}`, `{st.session_state.clicked_lng:.5f}`")
         st.divider()
         st.markdown("**📝 발자국 정보 입력**")
-        place_name    = st.text_input("장소 이름 *", placeholder="예: 경복궁 앞 카페")
+        place_name    = st.text_input("장소 이름 *", placeholder="예: 산으로 간 고등어")
         visit_date    = st.date_input("방문 일자 *")
-        review_text   = st.text_area("한 줄 리뷰 (30자 이내)", placeholder="예: 분위기가 너무 좋았어!", max_chars=30)
+        review_text   = st.text_area("한 줄 리뷰 (30자 이내)", placeholder="예: 김지갑 더 가져올걸!", max_chars=30)
         
         st.markdown("**⭐ 별점 선택 * **")
         rating_index  = st.feedback("stars", key="feedback_rating")
