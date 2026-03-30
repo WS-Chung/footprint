@@ -80,7 +80,7 @@ def build_map(footprints, center_lat=37.34541, center_lng=127.08995):
         
         icon_data = ws_icon_data if is_ws else hm_icon_data
         if icon_data:
-            icon_obj = folium.CustomIcon(icon_image=icon_data, icon_size=(32, 45))
+            icon_obj = folium.CustomIcon(icon_image=icon_data, icon_size=(32, 42))
         else:
             icon_obj = folium.Icon(color="blue" if is_ws else "red", icon="map-marker", prefix="fa")
 
