@@ -5,7 +5,6 @@ import folium
 import time
 import base64
 import os
-import json  # 지도를 임시 저장(캐싱)하기 위해 추가되었습니다.
 
 st.set_page_config(page_title="우리 발자국 👣", page_icon="👣", layout="wide")
 
@@ -44,8 +43,8 @@ def get_image_base64(filepath):
             return f"data:image/png;base64,{encoded}"
     return None
 
-# 새로고침 방지를 위해 is_adding 관련 오버레이 코드를 삭제하고 깔끔하게 정리했습니다.
-def build_map(footprints, center_lat=37.34541, center_lng=127.08995):
+# 중심 좌표의 기본값을 37.34541, 127.08995로 변경했습니다.
+def build_map(footprints, is_adding, center_lat=37.34541, center_lng=127.08995):
     m = folium.Map(location=[center_lat, center_lng], zoom_start=12, tiles="OpenStreetMap")
 
     # 미리 두 분의 아이콘 파일을 읽어둡니다. (파일이 없으면 None 반환)
@@ -63,7 +62,7 @@ def build_map(footprints, center_lat=37.34541, center_lng=127.08995):
             f"💬 {fp.get('review') or '-'}</div>"
         )
         
-        # 아이콘 적용: 파일이 있으면 사진을 (56x56 사이즈로), 없으면 기본 핀(파랑/빨강)을 띄웁니다.
+        # 아이콘 적용: 파일이 있으면 사진을 (38x38 사이즈로), 없으면 기본 핀(파랑/빨강)을 띄웁니다.
         icon_data = ws_icon_data if is_ws else hm_icon_data
         if icon_data:
             icon_obj = folium.CustomIcon(icon_image=icon_data, icon_size=(56, 56))
@@ -77,13 +76,19 @@ def build_map(footprints, center_lat=37.34541, center_lng=127.08995):
             icon=icon_obj
         ).add_to(m)
 
-    return m
+    if is_adding:
+        folium.Marker(
+            location=[center_lat, center_lng],
+            icon=folium.DivIcon(
+                html="<div style='background:rgba(0,0,0,0.7);color:white;padding:6px 14px;"
+                     "border-radius:20px;font-size:13px;white-space:nowrap;"
+                     "font-family:sans-serif;transform:translateX(-50%);'>"
+                     "📍 지도를 클릭해서 위치를 선택하세요</div>",
+                icon_size=(280, 36), icon_anchor=(140, 50)
+            )
+        ).add_to(m)
 
-# ⭐️ 핵심 마법: 생성된 지도를 메모리에 저장해두고, 데이터가 안 바뀌면 재사용합니다.
-@st.cache_resource(max_entries=5)
-def get_cached_map(footprints_json, center_lat, center_lng):
-    footprints = json.loads(footprints_json)
-    return build_map(footprints, center_lat, center_lng)
+    return m
 
 # ════════════════════════════════════════════════════════════
 # 좌측 패널
@@ -174,10 +179,9 @@ with center_col:
     c_lat = st.session_state.selected_marker["lat"] if st.session_state.selected_marker else 37.34541
     c_lng = st.session_state.selected_marker["lng"] if st.session_state.selected_marker else 127.08995
 
-    # 데이터를 텍스트(JSON)로 변환하여 캐싱 함수에 전달합니다.
-    footprints_json = json.dumps(footprints_data)
-    fmap = get_cached_map(footprints_json, c_lat, c_lng)
+    fmap     = build_map(footprints_data, st.session_state.is_adding, c_lat, c_lng)
     
+    # ⭐️ 핵심 수정 부분: 줌/팬할 때 화면 새로고침을 방지하도록 returned_objects를 지정했습니다!
     map_data = st_folium(
         fmap, 
         height=560, 
