@@ -3,6 +3,8 @@ from supabase import create_client, Client
 from streamlit_folium import st_folium
 import folium
 import time
+import base64
+import os
 
 st.set_page_config(page_title="우리 발자국 👣", page_icon="👣", layout="wide")
 
@@ -33,24 +35,44 @@ for key, val in {
     if key not in st.session_state:
         st.session_state[key] = val
 
+# 로컬 이미지 파일을 지도에 안전하게 띄우기 위한 마법(Base64 변환) 함수
+def get_image_base64(filepath):
+    if os.path.exists(filepath):
+        with open(filepath, "rb") as f:
+            encoded = base64.b64encode(f.read()).decode()
+            return f"data:image/png;base64,{encoded}"
+    return None
+
 def build_map(footprints, is_adding, center_lat=37.5665, center_lng=126.9780):
     m = folium.Map(location=[center_lat, center_lng], zoom_start=12, tiles="OpenStreetMap")
 
+    # 미리 두 분의 아이콘 파일을 읽어둡니다. (파일이 없으면 None 반환)
+    ws_icon_data = get_image_base64("ws.png")
+    hm_icon_data = get_image_base64("hm.png")
+
     for fp in footprints:
-        color = "blue" if fp["user_name"] == "운석" else "red"
+        is_ws = (fp["user_name"] == "운석")
         stars = "⭐" * int(fp.get("rating") or 0)
         popup_html = (
             f"<div style='font-family:sans-serif;min-width:160px;'>"
             f"<b>📍 {fp['place_name']}</b><br>"
-            f"{'🔵' if fp['user_name']=='운석' else '🔴'} {fp['user_name']}<br>"
+            f"{'🔵' if is_ws else '🔴'} {fp['user_name']}<br>"
             f"📅 {fp.get('visit_date','-')}<br>{stars}<br>"
             f"💬 {fp.get('review') or '-'}</div>"
         )
+        
+        # 아이콘 적용: 파일이 있으면 사진을 (38x38 사이즈로), 없으면 기본 핀(파랑/빨강)을 띄웁니다.
+        icon_data = ws_icon_data if is_ws else hm_icon_data
+        if icon_data:
+            icon_obj = folium.CustomIcon(icon_image=icon_data, icon_size=(38, 38))
+        else:
+            icon_obj = folium.Icon(color="blue" if is_ws else "red", icon="map-marker", prefix="fa")
+
         folium.Marker(
             location=[fp["lat"], fp["lng"]],
             popup=folium.Popup(popup_html, max_width=220),
             tooltip=fp["place_name"],
-            icon=folium.Icon(color=color, icon="map-marker", prefix="fa")
+            icon=icon_obj
         ).add_to(m)
 
     if is_adding:
@@ -79,7 +101,7 @@ with left_col:
     st.markdown("**나는 누구?**")
     user = st.radio("유저 선택", ["운석", "혜민"], horizontal=True, label_visibility="collapsed")
     st.session_state.selected_user = user
-    st.markdown("🔵 **운석** 이가 쓰는 중" if user == "운석" else "🔴 **혜민** 이가 쓰는 중")
+    st.markdown("🔵 **운석** 으로 활동 중" if user == "운석" else "🔴 **혜민** 으로 활동 중")
     st.divider()
 
     if not st.session_state.is_adding:
