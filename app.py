@@ -64,7 +64,7 @@ def build_map(footprints, is_adding, center_lat=37.5665, center_lng=126.9780):
         # 아이콘 적용: 파일이 있으면 사진을 (38x38 사이즈로), 없으면 기본 핀(파랑/빨강)을 띄웁니다.
         icon_data = ws_icon_data if is_ws else hm_icon_data
         if icon_data:
-            icon_obj = folium.CustomIcon(icon_image=icon_data, icon_size=(38, 38))
+            icon_obj = folium.CustomIcon(icon_image=icon_data, icon_size=(48, 48))
         else:
             icon_obj = folium.Icon(color="blue" if is_ws else "red", icon="map-marker", prefix="fa")
 
