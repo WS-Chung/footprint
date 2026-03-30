@@ -8,9 +8,16 @@ import os
 
 st.set_page_config(page_title="우리 발자국 👣", page_icon="👣", layout="wide")
 
+# 별점(st.feedback)의 크기를 1.2배로 키우는 CSS가 추가되었습니다.
 st.markdown("""
 <style>
     .block-container { padding-top: 1.5rem; padding-bottom: 1rem; }
+    [data-testid="stFeedback"] {
+        transform: scale(1.2);
+        transform-origin: left center;
+        margin-top: 0.5rem;
+        margin-bottom: 1rem;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -43,11 +50,9 @@ def get_image_base64(filepath):
             return f"data:image/png;base64,{encoded}"
     return None
 
-# 새로고침 방지를 위해 is_adding 오버레이 마커 코드를 삭제하고 구조를 단순화했습니다.
 def build_map(footprints, center_lat=37.34541, center_lng=127.08995):
     m = folium.Map(location=[center_lat, center_lng], zoom_start=12, tiles="OpenStreetMap")
 
-    # 미리 두 분의 아이콘 파일을 읽어둡니다. (파일이 없으면 None 반환)
     ws_icon_data = get_image_base64("ws.png")
     hm_icon_data = get_image_base64("hm.png")
 
@@ -62,7 +67,6 @@ def build_map(footprints, center_lat=37.34541, center_lng=127.08995):
             f"💬 {fp.get('review') or '-'}</div>"
         )
         
-        # 아이콘 적용: 파일이 있으면 사진을 (56x56 사이즈로), 없으면 기본 핀(파랑/빨강)을 띄웁니다.
         icon_data = ws_icon_data if is_ws else hm_icon_data
         if icon_data:
             icon_obj = folium.CustomIcon(icon_image=icon_data, icon_size=(56, 56))
@@ -115,14 +119,24 @@ with left_col:
         place_name    = st.text_input("장소 이름 *", placeholder="예: 경복궁 앞 카페")
         visit_date    = st.date_input("방문 일자 *")
         review_text   = st.text_area("한 줄 리뷰 (30자 이내)", placeholder="예: 분위기가 너무 좋았어!", max_chars=30)
-        rating        = st.select_slider("별점", options=[1,2,3,4,5], value=3, format_func=lambda x: "⭐"*x)
+        
+        # ⭐️ 슬라이더를 지우고, 세련된 클릭형 별점 위젯을 도입했습니다!
+        st.markdown("**⭐ 별점 선택 * **")
+        rating_index  = st.feedback("stars")
+        
         uploaded_file = st.file_uploader("사진 등록", type=["jpg","jpeg","png"])
 
         if st.button("💾 발자국 저장", use_container_width=True, type="primary"):
             if not place_name:
                 st.error("장소 이름을 입력해 주세요!")
+            elif rating_index is None:
+                # 별점을 클릭하지 않으면 저장되지 않도록 방어 로직을 추가했습니다.
+                st.warning("앗! 별점을 클릭해서 선택해 주세요 ⭐")
             else:
+                # 0부터 시작하므로 +1을 해줍니다 (0=1점, 4=5점)
+                final_rating = int(rating_index + 1)
                 image_url = None
+                
                 if uploaded_file:
                     file_bytes = uploaded_file.read()
                     file_name  = f"{st.session_state.selected_user}_{int(time.time())}_{uploaded_file.name}"
@@ -145,7 +159,7 @@ with left_col:
                         "place_name": place_name,
                         "visit_date": str(visit_date),
                         "review"    : review_text,
-                        "rating"    : int(rating),
+                        "rating"    : final_rating,
                         "image_url" : image_url,
                     }).execute()
                     st.success("✅ 발자국이 저장되었습니다!")
@@ -163,13 +177,11 @@ with left_col:
 with center_col:
     footprints_data = load_footprints()
     
-    # 선택된 마커가 없을 때 맵의 초기 위치도 요청하신 좌표로 변경했습니다.
     c_lat = st.session_state.selected_marker["lat"] if st.session_state.selected_marker else 37.34541
     c_lng = st.session_state.selected_marker["lng"] if st.session_state.selected_marker else 127.08995
 
     fmap     = build_map(footprints_data, c_lat, c_lng)
     
-    # ⭐️ 핵심 수정 부분: 줌/팬할 때 화면 새로고침을 방지하도록 returned_objects를 지정했습니다!
     map_data = st_folium(
         fmap, 
         height=560, 
@@ -230,7 +242,6 @@ with right_col:
         st.markdown(f"⭐ **별점:** {'⭐' * int(marker.get('rating') or 0)}")
         st.markdown(f"💬 **리뷰:** {marker.get('review') or '-'}")
 
-        # ── 이미지 표시 ──────────────────────────────────────
         img = marker.get("image_url")
         if img and str(img).strip():
             st.image(str(img).strip(), use_container_width=True)
