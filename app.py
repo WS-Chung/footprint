@@ -79,7 +79,7 @@ with left_col:
     st.markdown("**나는 누구?**")
     user = st.radio("유저 선택", ["운석", "혜민"], horizontal=True, label_visibility="collapsed")
     st.session_state.selected_user = user
-    st.markdown("🔵 **운석** 로 활동 중" if user == "운석" else "🔴 **혜민** 로 활동 중")
+    st.markdown("🔵 **운석** 이가 쓰는 중" if user == "운석" else "🔴 **혜민** 이가 쓰는 중")
     st.divider()
 
     if not st.session_state.is_adding:
