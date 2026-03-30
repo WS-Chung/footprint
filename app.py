@@ -24,7 +24,7 @@ def load_footprints():
     return res.data if res.data else []
 
 for key, val in {
-    "selected_user"  : "User A",
+    "selected_user"  : "운석",
     "is_adding"      : False,
     "clicked_lat"    : None,
     "clicked_lng"    : None,
@@ -37,12 +37,12 @@ def build_map(footprints, is_adding, center_lat=37.5665, center_lng=126.9780):
     m = folium.Map(location=[center_lat, center_lng], zoom_start=12, tiles="OpenStreetMap")
 
     for fp in footprints:
-        color = "blue" if fp["user_name"] == "User A" else "red"
+        color = "blue" if fp["user_name"] == "운석" else "red"
         stars = "⭐" * int(fp.get("rating") or 0)
         popup_html = (
             f"<div style='font-family:sans-serif;min-width:160px;'>"
             f"<b>📍 {fp['place_name']}</b><br>"
-            f"{'🔵' if fp['user_name']=='User A' else '🔴'} {fp['user_name']}<br>"
+            f"{'🔵' if fp['user_name']=='운석' else '🔴'} {fp['user_name']}<br>"
             f"📅 {fp.get('visit_date','-')}<br>{stars}<br>"
             f"💬 {fp.get('review') or '-'}</div>"
         )
@@ -77,9 +77,9 @@ with left_col:
     st.divider()
 
     st.markdown("**나는 누구?**")
-    user = st.radio("유저 선택", ["User A", "User B"], horizontal=True, label_visibility="collapsed")
+    user = st.radio("유저 선택", ["운석", "혜민"], horizontal=True, label_visibility="collapsed")
     st.session_state.selected_user = user
-    st.markdown("🔵 **User A** 로 활동 중" if user == "User A" else "🔴 **User B** 로 활동 중")
+    st.markdown("🔵 **운석** 로 활동 중" if user == "운석" else "🔴 **혜민** 로 활동 중")
     st.divider()
 
     if not st.session_state.is_adding:
@@ -121,7 +121,6 @@ with left_col:
                             file=file_bytes,
                             file_options={"content-type": uploaded_file.type}
                         )
-                        # get_public_url 반환값 처리 (버전마다 문자열 또는 dict)
                         raw_url = supabase.storage.from_("footprint_images").get_public_url(file_name)
                         image_url = raw_url if isinstance(raw_url, str) else raw_url.get("publicURL") or raw_url.get("publicUrl", "")
                     except Exception as e:
@@ -192,8 +191,8 @@ with right_col:
         """, unsafe_allow_html=True)
     else:
         marker     = st.session_state.selected_marker
-        user_color = "#3B82F6" if marker.get("user_name") == "User A" else "#EF4444"
-        user_emoji = "🔵" if marker.get("user_name") == "User A" else "🔴"
+        user_color = "#3B82F6" if marker.get("user_name") == "운석" else "#EF4444"
+        user_emoji = "🔵" if marker.get("user_name") == "운석" else "🔴"
 
         st.markdown(f"""
         <div style='background:{user_color}18;border-left:4px solid {user_color};
