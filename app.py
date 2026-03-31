@@ -50,7 +50,19 @@ def get_image_base64(filepath):
     return None
 
 def build_map(footprints, center_lat=37.34541, center_lng=127.08995):
-    m = folium.Map(location=[center_lat, center_lng], zoom_start=12, tiles="OpenStreetMap")
+    # 발급받은 키를 여기에 넣으세요
+    vworld_key = "B1536CE1-D219-356A-B15C-EF6A7AEA4DC5" 
+
+    # 브이월드 배경지도 (Base) 타일 URL 세팅
+    vworld_url = f"http://api.vworld.kr/req/wmts/1.0.0/{vworld_key}/Base/{{z}}/{{y}}/{{x}}.png"
+
+    # 기존 folium.Map 부분을 아래처럼 교체
+    m = folium.Map(
+    location=[center_lat, center_lng], 
+    zoom_start=12, 
+    tiles=vworld_url, 
+    attr="Vworld"
+)
 
     ws_icon_data = get_image_base64("ws.png")
     hm_icon_data = get_image_base64("hm.png")
