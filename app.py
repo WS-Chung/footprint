@@ -50,19 +50,19 @@ def get_image_base64(filepath):
     return None
 
 def build_map(footprints, center_lat=37.34541, center_lng=127.08995):
-    # 발급받은 키를 여기에 넣으세요
-    vworld_key = "B1536CE1-D219-356A-B15C-EF6A7AEA4DC5" 
+# 1. 브이월드 타일 URL 세팅 (기존과 동일)
+vworld_key = "B1536CE1-D219-356A-B15C-EF6A7AEA4DC5"
+vworld_url = f"http://api.vworld.kr/req/wmts/1.0.0/{vworld_key}/Base/{{z}}/{{y}}/{{x}}.png"
 
-    # 브이월드 배경지도 (Base) 타일 URL 세팅
-    vworld_url = f"http://api.vworld.kr/req/wmts/1.0.0/{vworld_key}/Base/{{z}}/{{y}}/{{x}}.png"
+# 2. 배경이 없는 빈 뼈대 지도를 먼저 생성 (tiles=None 설정이 핵심)
+m = folium.Map(location=[center_lat, center_lng], zoom_start=12, tiles=None)
 
-    # 기존 folium.Map 부분을 아래처럼 교체
-    m = folium.Map(
-    location=[center_lat, center_lng], 
-    zoom_start=12, 
-    tiles=vworld_url, 
-    attr="Vworld"
-)
+# 3. 브이월드 지도 타일을 생성하면서 투명도(opacity)를 0.5(50%)로 설정하고 지도(m)에 얹기
+folium.TileLayer(
+    tiles=vworld_url,
+    attr="Vworld",
+    opacity=0.5
+).add_to(m)
 
     ws_icon_data = get_image_base64("ws.png")
     hm_icon_data = get_image_base64("hm.png")
